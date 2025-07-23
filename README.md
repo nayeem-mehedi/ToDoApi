@@ -8,12 +8,13 @@ Built with **.NET 8**, this project demonstrates modern Web API practices using 
 
 ## 🚀 Features
 
-- ✅ CRUD API for `TodoItem`s
-- 🔐 JWT-based in-memory user authentication
-- 🧾 Token generation via `/api/auth/login`
-- 🔐 Secured endpoints using `[Authorize]`
+- ✅ Full CRUD API for `TodoItem`s
+- 🧾 User registration and login
+- 🔐 JWT-based user authentication
+- 🔐 Role-based endpoint authorization
 - 🧪 Built-in Swagger UI with JWT Bearer support
-- ⚙️ Easily configurable via `appsettings.json`
+- ⚙️ Easily configurable via `appsettings.json` + `launchSettings.json`
+- 🗄️ MSSQL database support
 
 ---
 
@@ -24,6 +25,7 @@ Built with **.NET 8**, this project demonstrates modern Web API practices using 
 - C#
 - JWT Bearer Authentication (`System.IdentityModel.Tokens.Jwt`)
 - Swagger UI via `Swashbuckle.AspNetCore`
+- Microsoft SQL Server (MSSQL)
 
 ---
 
@@ -45,5 +47,13 @@ dotnet run
 #### Swagger UI
 https://localhost:5001/swagger
 
+
+## Phase 2:
+
+### 1. Add Database support:
+Run DB migration scripts:
+1. initial : `dotnet ef migrations add InitialCreate`
+2. Future tables add : `dotnet ef migrations add AddToDoItemTable` + `dotnet ef migrations add AddUserTable` 
+3. followed by `dotnet ef database update`
 
 
