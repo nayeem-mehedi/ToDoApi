@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ToDoApi.Data;
 using ToDoApi.Models;
 
 namespace ToDoApi.Controllers;
@@ -9,55 +11,74 @@ namespace ToDoApi.Controllers;
 [Route("api/[controller]")]
 public class TodoController : ControllerBase
 {
-    private static readonly List<ToDoItem> todos = new()
+    
+    private readonly TodoDbContext _context;
+
+    public TodoController(TodoDbContext context)
     {
-        new ToDoItem { Id = 1, Title = "Learn ASP .NET", isComplete = false }
-    };
+        _context = context;
+    }
 
     [HttpGet]
-    public ActionResult<IEnumerable<ToDoItem>> yoyo()
+    public async Task<ActionResult<IEnumerable<ToDoItem>>> GetAll()
     {
-        return Ok(todos);
+        return await _context.ToDoItems.ToListAsync();
+        // use .AsNoTracking() for read only DB queries
     }
 
 
     [HttpGet("{id}")]
-    public ActionResult<ToDoItem> Get(int id)
+    public async Task<ActionResult<ToDoItem>> Get(int id)
     {
-        var todo = todos.FirstOrDefault(t => t.Id == id);
-        if (todo == null) return NotFound();
-
-        return Ok(todo);
+        var todo = await _context.ToDoItems.FindAsync(id);
+        return todo == null ? NotFound() : Ok(todo);
     }
 
 
     [HttpPost]
-    public ActionResult<ToDoItem> Create(ToDoItem item)
+    public async Task<ActionResult<ToDoItem>> Create(ToDoItem item)
     {
-        item.Id = todos.Count + 1;
-        todos.Add(item);
+        // _context.ToDoItems.AddAsync() // useful when SeqHiLo as ID or custom DB-based ID generator
+
+        _context.ToDoItems.Add(item);
+        await _context.SaveChangesAsync();
 
         return CreatedAtAction(nameof(Get), new { id = item.Id }, item);
     }
 
 
     [HttpPut("{id}")]
-    public ActionResult<ToDoItem> Update(int id, ToDoItem updatedItem)
+    public async Task<ActionResult<ToDoItem>> Update(int id, ToDoItem updatedItem)
     {
-        var index = todos.FindIndex(t => t.Id == id);
-        if (index == -1) return NotFound();
+        if (id != updatedItem.Id) return BadRequest();
 
-        todos[index] = updatedItem;
+        _context.Entry(updatedItem).State = EntityState.Modified;
+        await _context.SaveChangesAsync();
+
         return Ok(updatedItem);
     }
 
-    [HttpDelete("{id}")]
-    public IActionResult Delete(int id)
+    [HttpPost("{id}")]
+    public async Task<ActionResult<ToDoItem>> MarkComplete(int id)
     {
-        var item = todos.FirstOrDefault(t => t.Id == id);
+        var todoItem = await _context.ToDoItems.FindAsync(id);
+        if (todoItem == null) return NotFound();
+        
+        todoItem.isComplete = true;
+        await _context.SaveChangesAsync();
+        
+        return Ok(todoItem);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var item = await _context.ToDoItems.FindAsync(id);
         if (item == null) return NotFound();
 
-        todos.Remove(item);
+        _context.ToDoItems.Remove(item);
+        await _context.SaveChangesAsync();
+
         return NoContent();
     }
 }
